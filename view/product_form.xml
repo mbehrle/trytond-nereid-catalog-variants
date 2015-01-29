@@ -7,4 +7,8 @@
             <field name="attributes"/>
         </page>
     </xpath>
+    <xpath expr="/form/field[@name='template']" position="after">
+        <label name="display_name"/>
+        <field name="display_name"/>
+    </xpath>
 </data>
