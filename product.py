@@ -91,6 +91,20 @@ class Template:
                 'code': product.code,
                 'price': currency_format(product.sale_price(1)),
                 'url': url_for('product.product.render', uri=product.uri),
+                'image_urls': [
+                    {
+                        'large': (
+                            image.transform_command().thumbnail(500, 500, 'a')
+                            .url()
+                        ),
+                        'thumbnail': (
+                            image.transform_command().thumbnail(120, 120, 'a')
+                            .url()
+                        ),
+                        'regular': image.url,
+                    }
+                    for image in product.get_images()
+                ],
                 'attributes': res,
             })
 
