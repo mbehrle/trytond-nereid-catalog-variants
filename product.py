@@ -9,7 +9,7 @@ from functools import partial
 
 from trytond.model import ModelView, ModelSQL, fields
 from trytond.pool import PoolMeta
-from trytond.pyson import Eval, Bool
+from trytond.pyson import Eval
 from nereid import url_for, request
 from flask import json
 from babel import numbers
@@ -106,13 +106,6 @@ class Template:
 class Product:
     "Product"
     __name__ = 'product.product'
-
-    display_name = fields.Char(
-        'Display Name', translate=True,
-        select=True, states={
-            'readonly': ~Bool(Eval('active')),
-        }, depends=['active']
-    )
 
     @classmethod
     def __setup__(cls):
