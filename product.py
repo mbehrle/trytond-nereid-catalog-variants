@@ -9,7 +9,7 @@ from functools import partial
 
 from trytond.model import ModelView, ModelSQL, fields
 from trytond.pool import PoolMeta
-from trytond.pyson import Eval, Bool
+from trytond.pyson import Eval
 from nereid import url_for, request
 from flask import json
 from babel import numbers
@@ -91,6 +91,20 @@ class Template:
                 'code': product.code,
                 'price': currency_format(product.sale_price(1)),
                 'url': url_for('product.product.render', uri=product.uri),
+                'image_urls': [
+                    {
+                        'large': (
+                            image.transform_command().thumbnail(500, 500, 'a')
+                            .url()
+                        ),
+                        'thumbnail': (
+                            image.transform_command().thumbnail(120, 120, 'a')
+                            .url()
+                        ),
+                        'regular': image.url,
+                    }
+                    for image in product.get_images()
+                ],
                 'attributes': res,
             })
 
@@ -106,13 +120,6 @@ class Template:
 class Product:
     "Product"
     __name__ = 'product.product'
-
-    display_name = fields.Char(
-        'Display Name', translate=True,
-        select=True, states={
-            'readonly': ~Bool(Eval('active')),
-        }, depends=['active']
-    )
 
     @classmethod
     def __setup__(cls):
