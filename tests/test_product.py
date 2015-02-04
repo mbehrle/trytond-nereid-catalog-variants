@@ -21,6 +21,9 @@ from nereid.testing import NereidTestCase
 from trytond.transaction import Transaction
 from trytond.exceptions import UserError
 
+from trytond.config import CONFIG
+CONFIG['data_path'] = '/tmp'
+
 
 class TestProduct(NereidTestCase):
     "Product Test Case"
@@ -73,6 +76,21 @@ class TestProduct(NereidTestCase):
             'currencies': [('add', [usd.id])],
         }])
 
+    def create_static_file(self, file_buffer, folder_name):
+        """
+        Creates the static file for testing
+        """
+        folder, = self.StaticFolder.create([{
+            'folder_name': folder_name,
+            'description': 'Test Folder'
+        }])
+
+        return self.StaticFile.create([{
+            'name': 'test.png',
+            'folder': folder.id,
+            'file_binary': file_buffer,
+        }])[0]
+
     def setUp(self):
         """
         Set up data used in the tests.
@@ -95,6 +113,9 @@ class TestProduct(NereidTestCase):
         self.ProductAttribute = POOL.get('product.attribute')
         self.ProductAttributeSet = POOL.get('product.attribute.set')
         self.VariationAttributes = POOL.get('product.variation_attributes')
+        self.StaticFolder = POOL.get("nereid.static.folder")
+        self.StaticFile = POOL.get("nereid.static.file")
+        self.ProductImageSet = POOL.get('product.product.imageset')
 
     def test0010_product_variation_attributes(self):
         '''
@@ -257,6 +278,56 @@ class TestProduct(NereidTestCase):
 
                 self.assertGreater(
                     len(template1.get_product_variation_data()), 0
+                )
+
+    def test_0030_product_variation_data_images(self):
+        """
+        Test get_product_variation_data method for images.
+        """
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+            self.setup_defaults()
+            uom, = self.Uom.search([], limit=1)
+            file1 = self.create_static_file(buffer('test'), 'test')
+            file2 = self.create_static_file(buffer('test-again'), 'test-again')
+            app = self.get_app()
+
+            product_template, = self.Template.create([{
+                'name': 'test template',
+                'type': 'goods',
+                'list_price': Decimal('10'),
+                'cost_price': Decimal('5'),
+                'default_uom': uom.id,
+                'description': 'Description of template',
+                'products': [('create', self.Template.default_products())]
+            }])
+            image1, = self.ProductImageSet.create([{
+                'name': 'template_image',
+                'template': product_template,
+                'image': file1
+            }])
+
+            product, = product_template.products
+            product.displayed_on_eshop = True
+            product.uri = 'uri1'
+            product.save()
+
+            image2, = self.ProductImageSet.create([{
+                'name': 'product_image',
+                'product': product,
+                'image': file2
+            }])
+
+            with app.test_request_context('/'):
+                res = product.get_product_variation_data()
+                self.assertGreater(res, 0)
+
+                self.assertFalse(
+                    res['variants'][0]['image_urls'][0]['thumbnail']
+                    is None
+                )
+                self.assertFalse(
+                    res['variants'][0]['image_urls'][0]['large']
+                    is None
                 )
 
 
