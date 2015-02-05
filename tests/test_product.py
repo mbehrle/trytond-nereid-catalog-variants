@@ -329,6 +329,9 @@ class TestProduct(NereidTestCase):
                     res['variants'][0]['image_urls'][0]['large']
                     is None
                 )
+                self.assertEqual(
+                    res['variants'][0]['rec_name'], product.rec_name
+                )
 
 
 def suite():
