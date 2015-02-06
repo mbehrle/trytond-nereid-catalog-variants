@@ -87,6 +87,7 @@ class Template:
             )])
             variants.append({
                 'id': product.id,
+                'rec_name': product.rec_name,
                 'name': product.template.name,
                 'code': product.code,
                 'price': currency_format(product.sale_price(1)),
