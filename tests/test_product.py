@@ -5,13 +5,6 @@
     :copyright: (C) 2014 by Openlabs Technologies & Consulting (P) Limited
     :license: BSD, see LICENSE for more details.
 """
-import sys
-import os
-DIR = os.path.abspath(os.path.normpath(os.path.join(
-    __file__, '..', '..', '..', '..', '..', 'trytond'
-)))
-if os.path.isdir(DIR):
-    sys.path.insert(0, os.path.dirname(DIR))
 import unittest
 from decimal import Decimal
 
@@ -21,8 +14,8 @@ from nereid.testing import NereidTestCase
 from trytond.transaction import Transaction
 from trytond.exceptions import UserError
 
-from trytond.config import CONFIG
-CONFIG['data_path'] = '/tmp'
+from trytond.config import config
+config.set('database', 'path', '/tmp')
 
 
 class TestProduct(NereidTestCase):
@@ -59,7 +52,6 @@ class TestProduct(NereidTestCase):
         }])
 
         # Create website
-        url_map, = self.UrlMap.search([], limit=1)
         en_us, = self.Language.search([('code', '=', 'en_US')])
 
         self.locale_en_us, = self.Locale.create([{
@@ -69,7 +61,6 @@ class TestProduct(NereidTestCase):
         }])
         self.NereidWebsite.create([{
             'name': 'localhost',
-            'url_map': url_map.id,
             'company': company.id,
             'application_user': USER,
             'default_locale': self.locale_en_us.id,
@@ -103,7 +94,6 @@ class TestProduct(NereidTestCase):
         self.Product = POOL.get('product.product')
         self.Company = POOL.get('company.company')
         self.NereidUser = POOL.get('nereid.user')
-        self.UrlMap = POOL.get('nereid.url_map')
         self.Language = POOL.get('ir.lang')
         self.NereidWebsite = POOL.get('nereid.website')
         self.Party = POOL.get('party.party')
@@ -115,7 +105,6 @@ class TestProduct(NereidTestCase):
         self.VariationAttributes = POOL.get('product.variation_attributes')
         self.StaticFolder = POOL.get("nereid.static.folder")
         self.StaticFile = POOL.get("nereid.static.file")
-        self.ProductImageSet = POOL.get('product.product.imageset')
 
     def test0010_product_variation_attributes(self):
         '''
@@ -298,24 +287,21 @@ class TestProduct(NereidTestCase):
                 'cost_price': Decimal('5'),
                 'default_uom': uom.id,
                 'description': 'Description of template',
-                'products': [('create', self.Template.default_products())]
-            }])
-            image1, = self.ProductImageSet.create([{
-                'name': 'template_image',
-                'template': product_template,
-                'image': file1
+                'products': [('create', self.Template.default_products())],
+                'media': [('create', [{
+                    'static_file': file1.id,
+                }])],
             }])
 
             product, = product_template.products
-            product.displayed_on_eshop = True
-            product.uri = 'uri1'
-            product.save()
 
-            image2, = self.ProductImageSet.create([{
-                'name': 'product_image',
-                'product': product,
-                'image': file2
-            }])
+            self.Product.write([product], {
+                'displayed_on_eshop': True,
+                'uri': 'uri1',
+                'media': [('create', [{
+                    'static_file': file2.id,
+                }])],
+            })
 
             with app.test_request_context('/'):
                 res = product.get_product_variation_data()
