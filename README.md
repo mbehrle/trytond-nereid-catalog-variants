@@ -1,2 +1,0 @@
-Nereid Catalog Variants
-========================
