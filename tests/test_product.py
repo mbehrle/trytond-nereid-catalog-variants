@@ -6,6 +6,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import unittest
+import json
 from decimal import Decimal
 
 import trytond.tests.test_tryton
@@ -118,24 +119,37 @@ class TestProduct(NereidTestCase):
             attribute1, = self.ProductAttribute.create([{
                 'name': 'size',
                 'type_': 'selection',
-                'string': 'Size',
-                'selection': 'm: M\nl:L\nxl:XL'
+                'display_name': 'Size',
+                'selection': [
+                    ('create', [{
+                        'name': 'm',
+                    }, {
+                        'name': 'l',
+                    }, {
+                        'name': 'xl',
+                    }])
+                ]
             }])
             attribute2, = self.ProductAttribute.create([{
                 'name': 'color',
                 'type_': 'selection',
-                'string': 'Color',
-                'selection': 'blue: Blue\nblack:Black'
+                'selection': [
+                    ('create', [{
+                        'name': 'blue',
+                    }, {
+                        'name': 'black',
+                    }])
+                ]
             }])
             attribute3, = self.ProductAttribute.create([{
                 'name': 'attrib',
                 'type_': 'char',
-                'string': 'Attrib',
+                'display_name': 'Attrib',
             }])
             attribute4, = self.ProductAttribute.create([{
                 'name': 'ø',
                 'type_': 'char',
-                'string': 'ø',
+                'display_name': 'ø',
             }])
 
             # Create attribute set
@@ -184,7 +198,12 @@ class TestProduct(NereidTestCase):
                     'displayed_on_eshop': True,
                     'uri': 'uri2',
                     'code': 'SomeProductCode',
-                    'attributes': {'color': 'blue'}
+                    'attributes': [
+                        ('create', [{
+                            'attribute': attribute2.id,
+                            'value_selection': attribute2.selection[0].id,
+                        }])
+                    ],
                 }])
 
             # Finally create product with all attributes mentioned in
@@ -194,11 +213,18 @@ class TestProduct(NereidTestCase):
                 'displayed_on_eshop': True,
                 'uri': 'uri3',
                 'code': 'SomeProductCode',
-                'attributes': {
-                    'color': 'blue',
-                    'size': 'L',
-                    'ø': 'something'
-                }
+                'attributes': [
+                    ('create', [{
+                        'attribute': attribute1.id,
+                        'value_selection': attribute1.selection[1].id,
+                    }, {
+                        'attribute': attribute2.id,
+                        'value_selection': attribute2.selection[0].id,
+                    }, {
+                        'attribute': attribute4.id,
+                        'value_char': 'Test Char Value',
+                    }])
+                ],
             }])
             self.assert_(product1)
 
@@ -216,14 +242,27 @@ class TestProduct(NereidTestCase):
                 attribute1, = self.ProductAttribute.create([{
                     'name': 'size',
                     'type_': 'selection',
-                    'string': 'Size',
-                    'selection': 'm: M\nl:L\nxl:XL'
+                    'display_name': 'Size',
+                    'selection': [
+                        ('create', [{
+                            'name': 'm',
+                        }, {
+                            'name': 'l',
+                        }, {
+                            'name': 'xl',
+                        }])
+                    ]
                 }])
                 attribute2, = self.ProductAttribute.create([{
                     'name': 'color',
                     'type_': 'selection',
-                    'string': 'Color',
-                    'selection': 'blue: Blue\nblack:Black'
+                    'selection': [
+                        ('create', [{
+                            'name': 'blue',
+                        }, {
+                            'name': 'black',
+                        }])
+                    ]
                 }])
 
                 # Create attribute set
@@ -258,11 +297,15 @@ class TestProduct(NereidTestCase):
                     'displayed_on_eshop': True,
                     'uri': 'uri3',
                     'code': 'SomeProductCode',
-                    'attributes': {
-                        'color': 'blue',
-                        'size': 'L',
-                        'ø': 'something'
-                    }
+                    'attributes': [
+                        ('create', [{
+                            'attribute': attribute1.id,
+                            'value_selection': attribute1.selection[1].id,
+                        }, {
+                            'attribute': attribute2.id,
+                            'value_selection': attribute2.selection[0].id,
+                        }])
+                    ],
                 }])
 
                 self.assertGreater(
@@ -304,7 +347,7 @@ class TestProduct(NereidTestCase):
             })
 
             with app.test_request_context('/'):
-                res = product.get_product_variation_data()
+                res = json.loads(product.get_product_variation_data())
                 self.assertGreater(res, 0)
 
                 self.assertFalse(
