@@ -272,7 +272,7 @@ class ProductVariationAttributes(ModelSQL, ModelView):
         return {
             'sequence': self.sequence,
             'name': self.attribute.name,
-            'string': self.attribute.display_name,
+            'display_name': self.attribute.display_name,
             'widget': self.widget,
             'options': list(options),
             'attribute_id': self.attribute.id,
