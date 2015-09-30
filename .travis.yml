@@ -11,4 +11,4 @@ script:
   - flake8 .
 notifications:
   email:
-  - ci-notify@openlabs.co.in
+  - ci-notify@fulfil.io

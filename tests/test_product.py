@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-    tests/test_product.py
-
-    :copyright: (C) 2014 by Openlabs Technologies & Consulting (P) Limited
-    :license: BSD, see LICENSE for more details.
-"""
 import unittest
 import json
 from decimal import Decimal
@@ -73,7 +67,7 @@ class TestProduct(NereidTestCase):
         Creates the static file for testing
         """
         folder, = self.StaticFolder.create([{
-            'folder_name': folder_name,
+            'name': folder_name,
             'description': 'Test Folder'
         }])
 
