@@ -212,7 +212,8 @@ class ProductVariationAttributes(ModelSQL, ModelView):
     __name__ = 'product.variation_attributes'
 
     sequence = fields.Integer('Sequence')
-    template = fields.Many2One('product.template', 'Template', required=True)
+    template = fields.Many2One('product.template', 'Template', required=True,
+        ondelete='CASCADE')
     attribute = fields.Many2One(
         'product.attribute', 'Attribute', required=True,
         domain=[('sets', '=',
