@@ -4,7 +4,7 @@ from functools import partial
 from trytond.model import ModelView, ModelSQL, fields
 from trytond.pool import PoolMeta
 from trytond.pyson import Eval
-from nereid import url_for, request
+from nereid import url_for, current_website
 from flask import json
 from babel import numbers
 
@@ -173,8 +173,8 @@ class Product:
 
         currency_format = partial(
             numbers.format_currency,
-            currency=request.nereid_website.company.currency.code,
-            locale=request.nereid_website.default_locale.language.code
+            currency=current_website.company.currency.code,
+            locale=current_website.default_locale.language.code
         )
 
         return {
