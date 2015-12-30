@@ -4,7 +4,7 @@ msgstr "Content-Type: text/plain; charset=utf-8\n"
 
 msgctxt "error:product.attribute:"
 msgid "Attribute name must be unique!"
-msgstr "Ein Attributname kann nur einmal vergeben werden"
+msgstr "Ein Attributname kann nur einmal vergeben werden."
 
 msgctxt "error:product.product:"
 msgid "Please define following attributes for product %s: %s"
@@ -44,7 +44,7 @@ msgstr "Reihenfolge"
 
 msgctxt "field:product.variation_attributes,template:"
 msgid "Template"
-msgstr "Vorlage für Steuerkonto"
+msgstr "Artikel"
 
 msgctxt "field:product.variation_attributes,widget:"
 msgid "Widget"
