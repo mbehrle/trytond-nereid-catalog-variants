@@ -38,7 +38,10 @@ class Template:
 
     def validate_variation_attributes(self):
         for product in self.products_displayed_on_eshop:
-            product.validate_attributes()
+            # Ugly hack to disable validation on copy, when validate is called
+            # in the copy chain before the actual attributes are copied (#2587).
+            if not '-copy-' in product.uri:
+                product.validate_attributes()
 
     @classmethod
     def validate(cls, templates):
