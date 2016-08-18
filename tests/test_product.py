@@ -4,17 +4,18 @@ import json
 from decimal import Decimal
 
 import trytond.tests.test_tryton
-from trytond.tests.test_tryton import POOL, USER, DB_NAME, CONTEXT
+from trytond.tests.test_tryton import POOL, USER, ModuleTestCase, \
+     with_transaction
 from nereid.testing import NereidTestCase
-from trytond.transaction import Transaction
 from trytond.exceptions import UserError
 
 from trytond.config import config
 config.set('database', 'path', '/tmp')
 
 
-class TestProduct(NereidTestCase):
+class TestProduct(NereidTestCase, ModuleTestCase):
     "Product Test Case"
+    module = "nereid_catalog_variants"
 
     def setup_defaults(self):
         """
@@ -101,14 +102,137 @@ class TestProduct(NereidTestCase):
         self.StaticFolder = POOL.get("nereid.static.folder")
         self.StaticFile = POOL.get("nereid.static.file")
 
+    @with_transaction()
     def test0010_product_variation_attributes(self):
         '''
         Test if product has all the attributes of variation_attributes.
         '''
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            self.setup_defaults()
-            uom, = self.Uom.search([], limit=1)
+        self.setup_defaults()
+        uom, = self.Uom.search([], limit=1)
 
+        # Create attributes
+        attribute1, = self.ProductAttribute.create([{
+            'name': 'size',
+            'type_': 'selection',
+            'display_name': 'Size',
+            'selection': [
+                ('create', [{
+                    'name': 'm',
+                }, {
+                    'name': 'l',
+                }, {
+                    'name': 'xl',
+                }])
+            ]
+        }])
+        attribute2, = self.ProductAttribute.create([{
+            'name': 'color',
+            'type_': 'selection',
+            'selection': [
+                ('create', [{
+                    'name': 'blue',
+                }, {
+                    'name': 'black',
+                }])
+            ]
+        }])
+        attribute3, = self.ProductAttribute.create([{
+            'name': 'attrib',
+            'type_': 'char',
+            'display_name': 'Attrib',
+        }])
+        attribute4, = self.ProductAttribute.create([{
+            'name': 'ø',
+            'type_': 'char',
+            'display_name': 'ø',
+        }])
+
+        # Create attribute set
+        attrib_set, = self.ProductAttributeSet.create([{
+            'name': 'Cloth',
+            'attributes': [
+                ('add', [attribute1.id, attribute2.id, attribute4.id])
+            ]
+        }])
+
+        # Create product template with attribute set
+        template1, = self.Template.create([{
+            'name': 'THis is Product',
+            'type': 'goods',
+            'list_price': Decimal('10'),
+            'cost_price': Decimal('5'),
+            'default_uom': uom.id,
+            'attribute_set': attrib_set.id,
+        }])
+
+        # Create variation attributes
+        self.VariationAttributes.create([{
+            'template': template1.id,
+            'attribute': attribute1.id,
+        }, {
+            'template': template1.id,
+            'attribute': attribute2.id,
+        }, {
+            'template': template1.id,
+            'attribute': attribute4.id,
+        }])
+
+        # Try to create product with no attributes
+        with self.assertRaises(UserError):
+            self.Product.create([{
+                'template': template1.id,
+                'displayed_on_eshop': True,
+                'uri': 'uri1',
+                'code': 'SomeProductCode',
+            }])
+
+        # Try to create product with only one attribute
+        with self.assertRaises(UserError):
+            self.Product.create([{
+                'template': template1.id,
+                'displayed_on_eshop': True,
+                'uri': 'uri2',
+                'code': 'SomeProductCode',
+                'attributes': [
+                    ('create', [{
+                        'attribute': attribute2.id,
+                        'value_selection': attribute2.selection[0].id,
+                    }])
+                ],
+            }])
+
+        # Finally create product with all attributes mentioned in
+        # template variation_attributes.
+        product1, = self.Product.create([{
+            'template': template1.id,
+            'displayed_on_eshop': True,
+            'uri': 'uri3',
+            'code': 'SomeProductCode',
+            'attributes': [
+                ('create', [{
+                    'attribute': attribute1.id,
+                    'value_selection': attribute1.selection[1].id,
+                }, {
+                    'attribute': attribute2.id,
+                    'value_selection': attribute2.selection[0].id,
+                }, {
+                    'attribute': attribute4.id,
+                    'value_char': 'Test Char Value',
+                }])
+            ],
+        }])
+        self.assert_(product1)
+
+    @with_transaction()
+    def test_0020_product_variation_data(self):
+        """
+        Test get_product_variation_data method.
+        """
+        self.setup_defaults()
+        uom, = self.Uom.search([], limit=1)
+        app = self.get_app()
+
+        with app.test_request_context():
             # Create attributes
             attribute1, = self.ProductAttribute.create([{
                 'name': 'size',
@@ -135,22 +259,12 @@ class TestProduct(NereidTestCase):
                     }])
                 ]
             }])
-            attribute3, = self.ProductAttribute.create([{
-                'name': 'attrib',
-                'type_': 'char',
-                'display_name': 'Attrib',
-            }])
-            attribute4, = self.ProductAttribute.create([{
-                'name': 'ø',
-                'type_': 'char',
-                'display_name': 'ø',
-            }])
 
             # Create attribute set
             attrib_set, = self.ProductAttributeSet.create([{
                 'name': 'Cloth',
                 'attributes': [
-                    ('add', [attribute1.id, attribute2.id, attribute4.id])
+                    ('add', [attribute1.id, attribute2.id])
                 ]
             }])
 
@@ -171,37 +285,8 @@ class TestProduct(NereidTestCase):
             }, {
                 'template': template1.id,
                 'attribute': attribute2.id,
-            }, {
-                'template': template1.id,
-                'attribute': attribute4.id,
             }])
 
-            # Try to create product with no attributes
-            with self.assertRaises(UserError):
-                self.Product.create([{
-                    'template': template1.id,
-                    'displayed_on_eshop': True,
-                    'uri': 'uri1',
-                    'code': 'SomeProductCode',
-                }])
-
-            # Try to create product with only one attribute
-            with self.assertRaises(UserError):
-                self.Product.create([{
-                    'template': template1.id,
-                    'displayed_on_eshop': True,
-                    'uri': 'uri2',
-                    'code': 'SomeProductCode',
-                    'attributes': [
-                        ('create', [{
-                            'attribute': attribute2.id,
-                            'value_selection': attribute2.selection[0].id,
-                        }])
-                    ],
-                }])
-
-            # Finally create product with all attributes mentioned in
-            # template variation_attributes.
             product1, = self.Product.create([{
                 'template': template1.id,
                 'displayed_on_eshop': True,
@@ -214,147 +299,63 @@ class TestProduct(NereidTestCase):
                     }, {
                         'attribute': attribute2.id,
                         'value_selection': attribute2.selection[0].id,
-                    }, {
-                        'attribute': attribute4.id,
-                        'value_char': 'Test Char Value',
                     }])
                 ],
             }])
-            self.assert_(product1)
 
-    def test_0020_product_variation_data(self):
-        """
-        Test get_product_variation_data method.
-        """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            self.setup_defaults()
-            uom, = self.Uom.search([], limit=1)
-            app = self.get_app()
+            self.assertGreater(
+                len(template1.get_product_variation_data()), 0
+            )
 
-            with app.test_request_context():
-                # Create attributes
-                attribute1, = self.ProductAttribute.create([{
-                    'name': 'size',
-                    'type_': 'selection',
-                    'display_name': 'Size',
-                    'selection': [
-                        ('create', [{
-                            'name': 'm',
-                        }, {
-                            'name': 'l',
-                        }, {
-                            'name': 'xl',
-                        }])
-                    ]
-                }])
-                attribute2, = self.ProductAttribute.create([{
-                    'name': 'color',
-                    'type_': 'selection',
-                    'selection': [
-                        ('create', [{
-                            'name': 'blue',
-                        }, {
-                            'name': 'black',
-                        }])
-                    ]
-                }])
-
-                # Create attribute set
-                attrib_set, = self.ProductAttributeSet.create([{
-                    'name': 'Cloth',
-                    'attributes': [
-                        ('add', [attribute1.id, attribute2.id])
-                    ]
-                }])
-
-                # Create product template with attribute set
-                template1, = self.Template.create([{
-                    'name': 'THis is Product',
-                    'type': 'goods',
-                    'list_price': Decimal('10'),
-                    'cost_price': Decimal('5'),
-                    'default_uom': uom.id,
-                    'attribute_set': attrib_set.id,
-                }])
-
-                # Create variation attributes
-                self.VariationAttributes.create([{
-                    'template': template1.id,
-                    'attribute': attribute1.id,
-                }, {
-                    'template': template1.id,
-                    'attribute': attribute2.id,
-                }])
-
-                product1, = self.Product.create([{
-                    'template': template1.id,
-                    'displayed_on_eshop': True,
-                    'uri': 'uri3',
-                    'code': 'SomeProductCode',
-                    'attributes': [
-                        ('create', [{
-                            'attribute': attribute1.id,
-                            'value_selection': attribute1.selection[1].id,
-                        }, {
-                            'attribute': attribute2.id,
-                            'value_selection': attribute2.selection[0].id,
-                        }])
-                    ],
-                }])
-
-                self.assertGreater(
-                    len(template1.get_product_variation_data()), 0
-                )
-
+    @with_transaction()
     def test_0030_product_variation_data_images(self):
         """
         Test get_product_variation_data method for images.
         """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            self.setup_defaults()
-            uom, = self.Uom.search([], limit=1)
-            file1 = self.create_static_file(buffer('test'), 'test')
-            file2 = self.create_static_file(buffer('test-again'), 'test-again')
-            app = self.get_app()
+        self.setup_defaults()
+        uom, = self.Uom.search([], limit=1)
+        file1 = self.create_static_file(buffer('test'), 'test')
+        file2 = self.create_static_file(buffer('test-again'), 'test-again')
+        app = self.get_app()
 
-            product_template, = self.Template.create([{
-                'name': 'test template',
-                'type': 'goods',
-                'list_price': Decimal('10'),
-                'cost_price': Decimal('5'),
-                'default_uom': uom.id,
-                'description': 'Description of template',
-                'products': [('create', self.Template.default_products())],
-                'media': [('create', [{
-                    'static_file': file1.id,
-                }])],
-            }])
+        product_template, = self.Template.create([{
+            'name': 'test template',
+            'type': 'goods',
+            'list_price': Decimal('10'),
+            'cost_price': Decimal('5'),
+            'default_uom': uom.id,
+            'description': 'Description of template',
+            'products': [('create', self.Template.default_products())],
+            'media': [('create', [{
+                'static_file': file1.id,
+            }])],
+        }])
 
-            product, = product_template.products
+        product, = product_template.products
 
-            self.Product.write([product], {
-                'displayed_on_eshop': True,
-                'uri': 'uri1',
-                'media': [('create', [{
-                    'static_file': file2.id,
-                }])],
-            })
+        self.Product.write([product], {
+            'displayed_on_eshop': True,
+            'uri': 'uri1',
+            'media': [('create', [{
+                'static_file': file2.id,
+            }])],
+        })
 
-            with app.test_request_context('/'):
-                res = json.loads(product.get_product_variation_data())
-                self.assertGreater(res, 0)
+        with app.test_request_context('/'):
+            res = json.loads(product_template.get_product_variation_data())
+            self.assertGreater(res, 0)
 
-                self.assertFalse(
-                    res['variants'][0]['image_urls'][0]['thumbnail']
-                    is None
-                )
-                self.assertFalse(
-                    res['variants'][0]['image_urls'][0]['large']
-                    is None
-                )
-                self.assertEqual(
-                    res['variants'][0]['rec_name'], product.rec_name
-                )
+            self.assertFalse(
+                res['variants'][0]['image_urls'][0]['thumbnail']
+                is None
+            )
+            self.assertFalse(
+                res['variants'][0]['image_urls'][0]['large']
+                is None
+            )
+            self.assertEqual(
+                res['variants'][0]['rec_name'], product.rec_name
+            )
 
 
 def suite():

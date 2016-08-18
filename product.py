@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from functools import partial
 
-from trytond.model import ModelView, ModelSQL, fields
+from trytond.model import ModelView, ModelSQL, fields, Unique
 from trytond.pool import PoolMeta
 from trytond.pyson import Eval
 from nereid import url_for, current_website
@@ -279,7 +279,8 @@ class ProductAttribute:
     @classmethod
     def __setup__(cls):
         super(ProductAttribute, cls).__setup__()
+        table = cls.__table__()
         cls._sql_constraints += [
-            ('unique_name', 'UNIQUE(name)',
+            ('unique_name', Unique(table, table.name),
                 'Attribute name must be unique!'),
         ]
