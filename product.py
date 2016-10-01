@@ -1,16 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-    product.py
-
-    :copyright: (c) 2014 by Openlabs Technologies & Consulting (P) Limited
-    :license: BSD, see LICENSE for more details.
-"""
 from functools import partial
 
-from trytond.model import ModelView, ModelSQL, fields
+from trytond.model import ModelView, ModelSQL, fields, Unique
 from trytond.pool import PoolMeta
 from trytond.pyson import Eval
-from nereid import url_for, request
+from nereid import url_for, current_website
 from flask import json
 from babel import numbers
 
@@ -182,8 +176,8 @@ class Product:
 
         currency_format = partial(
             numbers.format_currency,
-            currency=request.nereid_website.company.currency.code,
-            locale=request.nereid_website.default_locale.language.code
+            currency=current_website.company.currency.code,
+            locale=current_website.default_locale.language.code
         )
 
         return {
@@ -289,7 +283,8 @@ class ProductAttribute:
     @classmethod
     def __setup__(cls):
         super(ProductAttribute, cls).__setup__()
+        table = cls.__table__()
         cls._sql_constraints += [
-            ('unique_name', 'UNIQUE(name)',
+            ('unique_name', Unique(table, table.name),
                 'Attribute name must be unique!'),
         ]

@@ -1,15 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-    tests/__init__.py
-
-    :copyright: (c) 2014 by Openlabs Technologies & Consulting (P) Limited
-    :license: BSD, see LICENSE for more details.
-"""
 import unittest
 
 import trytond.tests.test_tryton
 
-from tests.test_views_depends import TestViewsDepends
 from tests.test_product import TestProduct
 
 
@@ -19,7 +12,6 @@ def suite():
     """
     test_suite = trytond.tests.test_tryton.suite()
     test_suite.addTests([
-        unittest.TestLoader().loadTestsFromTestCase(TestViewsDepends),
         unittest.TestLoader().loadTestsFromTestCase(TestProduct),
     ])
     return test_suite
