@@ -2,9 +2,4 @@
 <data>
     <xpath expr="/form/notebook/page[@id='variation_attributes']" position="replace">
     </xpath>
-    <xpath expr="/form/notebook" position="inside">
-        <page name="attributes">
-            <field name="attributes"/>
-        </page>
-    </xpath>
 </data>
