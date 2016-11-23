@@ -77,11 +77,11 @@ minor_version = int(minor_version)
 requires = []
 
 MODULE2PREFIX = {
-    'product_attribute_strict': 'fio',
+    'product_attribute_strict': 'm9s',
 }
 
 MODULE = "nereid_catalog_variants"
-PREFIX = "fio"
+PREFIX = "m9s"
 for dep in info.get('depends', []):
     if not re.match(r'(ir|res|webdav)(\W|$)', dep):
         requires.append(
