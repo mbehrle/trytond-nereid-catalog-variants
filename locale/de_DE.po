@@ -14,6 +14,10 @@ msgctxt "error:product.template:"
 msgid "Please define following attributes for product %s: %s"
 msgstr "Bitte folgende Attribute definieren für Artikel %s: %s"
 
+msgctxt "field:product.product,variation_attributes:"
+msgid "Variation Attributes"
+msgstr "Variantenattribute"
+
 msgctxt "field:product.template,variation_attributes:"
 msgid "Variation Attributes"
 msgstr "Variantenattribute"
